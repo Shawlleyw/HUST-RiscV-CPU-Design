@@ -1,48 +1,41 @@
-# HUST-RiscV-CPU-Design
+# rv-emu
 
+将`rv-cpu.circ`导入至logism软件中进行电路仿真
 
-[TOC]
-## Lab-1 单周期处理器， 差异化指令CCAB
+![table](./docs/images/table.png)
 
-**问题记录**
-- **[Solved]** `SB`指令的实现较为复杂。由于数据存储器只能按双字对齐寻址，故需要先加载整个双字，替换掉其中一个字节再写入存储器
-- **[Fixed]** RiscV手册里的立即数`[20:1]`，最初被我理解成20位`[19:0]`并据此实现，引发一系列错误并在单条`branch`指令上陷入死循环
+## 信号生成
 
-## Lab-2 流水线处理器
+查阅risc-v指令集对应指令并将对应段填入`auto-gen.xlsx`中，会自动生成各个信号的表达式，填入信号控制器即可
 
-### 理想流水线
+## 单周期指令
 
-**问题记录**
+支持基本指令，每条指令为一个周期
 
-- **[Fixed]** 在单周期中实现的`ecall`触发`halt`的电路未锁存，导致在流水线中`ecall`失效
-- **[Fixed]** 写目标寄存器时直接使用了ID段的目标寄存器，应使用WB段的
+![single-cycle](./docs/images/single_cycle.png)
 
-### 气泡流水线
+## 流水线
 
-**问题记录**
+**理想流水线**
 
-- **[Fixed]** 寄存器文件改为下降沿
-- **[Fixed]** benchmark出了点错误，调了很久没通过测试
-- **[Solved]** 为了处理ecall指令，需用halt改变时钟源部分的逻辑，使得ecall退出时，时钟**一直维持**在**高电平**，流水线不工作，并且恢复后寄存器正常写入此时的数据
+无分支指令，无数据冲突
 
-### 重定向流水线
+![ideal-pipeline](./docs/images/ideal_pipeline.png)
 
-**问题记录**
+**气泡流水线**
 
-- **[Fixed]** 将重定向判断在EX段做 -> 重定向判断在ID段做
-- **[Fixed]** EX时误将重定向传至Imm与R2二选一后，应先重定向R2，再根据SRC选择Imm或R2
+在出现分支结构与数据冲突时插入气泡暂停流水线
+
+![stall-pipeline](./docs/images/stall_pipeline.png)
+
+**重定向流水线**
+
+数据冲突时不插入气泡，而是将流水线后段的数据重定向转发至前段，拥有比气泡流水线更好的性能
+
+![data-redirection](./docs/images/data_redirection_pipeline.png)
 
 ## 中断
 
-### 单级中断
+具有优先级的多级嵌套中断
 
-**问题记录**
-
-- **[Fixed]** 需要将中断信号锁存
-- **[Fixed]** 寄存器改为上跳沿才能通过测试，因为初始是低电平
-
-### 多级中断
-
-**问题记录**
-
-无
+![multi-level-interruption](./docs/images/multi-level_interruption.png)
